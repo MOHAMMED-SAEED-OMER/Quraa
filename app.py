@@ -32,7 +32,7 @@ def main():
     apply_theme()
 
     # 2️⃣ Handle authentication
-    if not st.experimental_user.is_logged_in:
+    if not st.user.is_logged_in:
         _show_auth_interface()
         return  # Stop execution until login is complete
 
