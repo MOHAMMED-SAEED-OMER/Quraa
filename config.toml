@@ -1,0 +1,11 @@
+[theme]
+primaryColor = "#1e90ff"  # Light blue
+backgroundColor = "#f0f2f6"  # Light gray
+secondaryBackgroundColor = "#ffffff"  # White
+textColor = "#333333"  # Dark gray
+font = "sans serif"
+
+[server]
+headless = true
+port = 8501
+enableCORS = false
