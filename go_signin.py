@@ -1,25 +1,42 @@
 import streamlit as st
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import datetime
 
 def google_signin():
-    """
-    Uses Streamlit's built-in OIDC authentication.
-    If the user is not logged in, shows a login button.
-    Once logged in, retrieves user info from `st.experimental_user`.
-    """
     st.title("Sign In with Google")
 
-    # 1️⃣ Check if the user is already logged in
     if not st.experimental_user.is_logged_in:
         st.write("You are not logged in.")
-        # Show a button to trigger Google login
         st.button("Log in with Google", on_click=st.login)
-        st.stop()  # Stop script execution until login is complete
+        st.stop()
 
-    # 2️⃣ Retrieve user details after successful login
-    user_info = {
-        "name": st.experimental_user.name or "Unknown User",
-        "email": st.experimental_user.email or "Unknown Email"
-    }
+    user_email = st.experimental_user.email
+    user_name = st.experimental_user.name or "Unknown"
+    default_role = "user"
 
-    st.success(f"Logged in as {user_info['name']} ({user_info['email']})")
-    return user_info
+    # Connect to DB
+    conn = psycopg2.connect(st.secrets["neon"]["dsn"])
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    # Check if user exists
+    cur.execute("SELECT * FROM users WHERE email = %s", (user_email,))
+    user_record = cur.fetchone()
+
+    if not user_record:
+        # Insert user with default role
+        cur.execute("""
+            INSERT INTO users (username, email, role, created_at)
+            VALUES (%s, %s, %s, %s)
+        """, (user_name, user_email, default_role, datetime.datetime.now()))
+        conn.commit()
+        role = default_role
+    else:
+        role = user_record["role"]
+
+    cur.close()
+    conn.close()
+
+    st.success(f"Logged in as {user_name} ({user_email}) - Role: {role}")
+
+    return {"name": user_name, "email": user_email, "role": role}
