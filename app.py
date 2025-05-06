@@ -50,7 +50,7 @@ def _show_main_interface(user_info):
         st.stop()
 
     # Navigation
-    page = render_sidebar()
+    page = render_sidebar(role)
 
     if page == "Overview":
         overview()
