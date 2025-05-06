@@ -8,18 +8,15 @@ from addgroup import add_group
 from tracking import tracking
 from visualization import visualization
 from settings import settings
+from admin import admin_panel  # NEW
 
-# Email-based sign in and sign up
+# Authentication
 from signin import signin
 from signup import signup
-
-# Google Sign-In method
 from go_signin import google_signin
 
-# Page config
 st.set_page_config(page_title="Quraa Management System", layout="wide")
 
-# Main app entry
 def main():
     configure_theme()
     apply_theme()
@@ -28,67 +25,56 @@ def main():
         _show_auth_interface()
         return
 
-    if 'user' not in st.session_state or 'role' not in st.session_state:
-        user = google_signin()
-        st.session_state.user = user
-        st.session_state.role = user.get("role", "user")  # Default to "user"
-
-    _show_main_interface()
+    user_info = google_signin()  # Returns dict with name, email, role
+    _show_main_interface(user_info)
 
 def _show_auth_interface():
     st.title("Quraa - Please Sign In or Sign Up")
 
-    choice = st.radio("Select an action:", ["Sign In (Email)", "Sign Up", "Sign In with Google"])
-
-    if choice == "Sign In (Email)":
+    auth_choice = st.radio("Select an action:", ["Sign In (Email)", "Sign Up", "Sign In with Google"])
+    if auth_choice == "Sign In (Email)":
         signin()
-    elif choice == "Sign Up":
+    elif auth_choice == "Sign Up":
         signup()
     else:
-        user = google_signin()
-        st.session_state.user = user
-        st.session_state.role = user.get("role", "user")
+        google_signin()
 
-def _show_main_interface():
-    user = st.session_state.user
-    role = st.session_state.role
-
-    st.sidebar.write(f"Logged in as: **{user['name']}** ({user['email']})")
-    st.sidebar.write(f"**Role:** {role.capitalize()}")
+def _show_main_interface(user_info):
+    role = user_info["role"]
+    st.sidebar.write(f"Logged in as: **{user_info['name']}** ({user_info['email']})")
+    st.sidebar.write(f"**Role:** {role.title()}")
 
     if st.sidebar.button("Logout"):
         st.logout()
         st.success("You have been logged out.")
         st.stop()
 
-    # Sidebar menu
+    # Navigation
     page = render_sidebar()
 
-    # Role-based access logic
     if page == "Overview":
         overview()
 
-    elif page == "Visualization":
-        if role in ["participant", "admin"]:
-            visualization()
-        else:
-            st.warning("Access Denied: Only participants and admins can view this page.")
+    elif page == "Visualization" and role in ["participant", "admin"]:
+        visualization()
 
-    elif page in ["Add Group", "Edit", "Tracking", "Settings"]:
-        if role == "admin":
-            if page == "Add Group":
-                add_group()
-            elif page == "Edit":
-                edit()
-            elif page == "Tracking":
-                tracking()
-            elif page == "Settings":
-                settings()
-        else:
-            st.warning("Access Denied: Only admins can view this page.")
+    elif page == "Add Group" and role == "admin":
+        add_group()
+
+    elif page == "Edit" and role == "admin":
+        edit()
+
+    elif page == "Tracking" and role == "admin":
+        tracking()
+
+    elif page == "Settings" and role == "admin":
+        settings()
+
+    elif page == "Admin Panel" and role == "admin":
+        admin_panel()
 
     else:
-        st.error("Page not found or not accessible.")
+        st.warning("🚫 You do not have access to this page.")
 
 if __name__ == "__main__":
     main()
