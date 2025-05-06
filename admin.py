@@ -1,7 +1,7 @@
 # admin.py
 import streamlit as st
 import psycopg2
-from db_connection import get_connection  # You must have a get_connection() function
+from db_handler import get_connection  # You must have a get_connection() function
 
 def admin_panel():
     st.title("🔐 Admin Panel - Manage User Roles")
