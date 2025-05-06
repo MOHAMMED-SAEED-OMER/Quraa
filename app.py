@@ -13,69 +13,82 @@ from settings import settings
 from signin import signin
 from signup import signup
 
-# New Google Sign-In method
+# Google Sign-In method
 from go_signin import google_signin
 
-# Set page configuration
+# Page config
 st.set_page_config(page_title="Quraa Management System", layout="wide")
 
+# Main app entry
 def main():
-    """
-    Main entry point for the Quraa Streamlit app.
-    1) Configures theme.
-    2) Checks if user is logged in; if not, shows sign-in (email/google) or sign-up.
-    3) If logged in, shows the main app interface with logout and navigation.
-    """
-
-    # 1️⃣ Configure theme
     configure_theme()
     apply_theme()
 
-    # 2️⃣ Handle authentication
     if not st.experimental_user.is_logged_in:
         _show_auth_interface()
-        return  # Stop execution until login is complete
+        return
 
-    # 3️⃣ Show main app interface
+    if 'user' not in st.session_state or 'role' not in st.session_state:
+        user = google_signin()
+        st.session_state.user = user
+        st.session_state.role = user.get("role", "user")  # Default to "user"
+
     _show_main_interface()
 
 def _show_auth_interface():
-    """Displays authentication options: Email sign-in, sign-up, or Google sign-in."""
     st.title("Quraa - Please Sign In or Sign Up")
 
-    auth_choice = st.radio("Select an action:", ["Sign In (Email)", "Sign Up", "Sign In with Google"])
+    choice = st.radio("Select an action:", ["Sign In (Email)", "Sign Up", "Sign In with Google"])
 
-    if auth_choice == "Sign In (Email)":
+    if choice == "Sign In (Email)":
         signin()
-    elif auth_choice == "Sign Up":
+    elif choice == "Sign Up":
         signup()
     else:
-        google_signin()
+        user = google_signin()
+        st.session_state.user = user
+        st.session_state.role = user.get("role", "user")
 
 def _show_main_interface():
-    """Displays the app interface for logged-in users: logout + page selection."""
-    user = st.experimental_user
-    st.sidebar.write(f"Logged in as: **{user.name}** ({user.email})")
+    user = st.session_state.user
+    role = st.session_state.role
+
+    st.sidebar.write(f"Logged in as: **{user['name']}** ({user['email']})")
+    st.sidebar.write(f"**Role:** {role.capitalize()}")
 
     if st.sidebar.button("Logout"):
-        st.logout()  # Streamlit handles the logout process
+        st.logout()
         st.success("You have been logged out.")
         st.stop()
 
-    # Navigation
+    # Sidebar menu
     page = render_sidebar()
+
+    # Role-based access logic
     if page == "Overview":
         overview()
-    elif page == "Add Group":
-        add_group()
-    elif page == "Edit":
-        edit()
-    elif page == "Tracking":
-        tracking()
+
     elif page == "Visualization":
-        visualization()
-    elif page == "Settings":
-        settings()
+        if role in ["participant", "admin"]:
+            visualization()
+        else:
+            st.warning("Access Denied: Only participants and admins can view this page.")
+
+    elif page in ["Add Group", "Edit", "Tracking", "Settings"]:
+        if role == "admin":
+            if page == "Add Group":
+                add_group()
+            elif page == "Edit":
+                edit()
+            elif page == "Tracking":
+                tracking()
+            elif page == "Settings":
+                settings()
+        else:
+            st.warning("Access Denied: Only admins can view this page.")
+
+    else:
+        st.error("Page not found or not accessible.")
 
 if __name__ == "__main__":
     main()
