@@ -25,25 +25,35 @@ def clear_notifications():
         for notification in st.session_state["notifications"]:
             notification["read"] = True
 
-def render_sidebar():
+def render_sidebar(role="user"):
     """
     Renders the sidebar with navigation and notification features.
+    The visible pages depend on the user's role.
     """
     st.sidebar.title("Quraa Management")
-    page = st.sidebar.radio("Navigate", ["Overview", "Add Group", "Edit", "Tracking", "Visualization","Settings"])
 
-    # Notifications bell
+    # Pages based on user role
+    if role == "admin":
+        available_pages = [
+            "Overview", "Add Group", "Edit", "Tracking", "Visualization", "Settings", "Admin Panel"
+        ]
+    elif role == "participant":
+        available_pages = ["Overview", "Visualization"]
+    else:  # default role: user
+        available_pages = ["Overview"]
+
+    # Navigation
+    page = st.sidebar.radio("Navigate", available_pages)
+
+    # Notifications
     st.sidebar.markdown("---")
     notifications = get_notifications()
     unread_count = sum(1 for n in notifications if not n["read"])
 
     # Display notification bell
-    if unread_count > 0:
-        st.sidebar.write(f"🔔 **Notifications ({unread_count})**")
-    else:
-        st.sidebar.write("🔔 **Notifications (0)**")
+    st.sidebar.write(f"🔔 **Notifications ({unread_count})**")
 
-    # Notification details
+    # Show notification details
     if st.sidebar.button("View Notifications"):
         st.sidebar.markdown("### Notifications")
         if notifications:
@@ -54,7 +64,6 @@ def render_sidebar():
             st.sidebar.write("No notifications.")
         if st.sidebar.button("Clear All Notifications"):
             clear_notifications()
-            # We can do st.experimental_rerun() if needed
             st.experimental_rerun()
 
     st.sidebar.markdown("---")
