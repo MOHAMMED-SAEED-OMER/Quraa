@@ -2,48 +2,30 @@
 
 import psycopg2
 import streamlit as st
+from psycopg2.extras import RealDictCursor
 
 def get_connection():
-    conn = psycopg2.connect(st.secrets["neon"]["dsn"])
-    return conn
+    return psycopg2.connect(st.secrets["neon"]["dsn"])
 
 def run_query(sql, params=None):
-    """
-    For SELECT statements (no auto-commit).
-    Returns fetched rows.
-    """
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(sql, params or ())
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return rows
+    """Run SELECT queries and return result as list of dicts."""
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(sql, params or ())
+            return cur.fetchall()
 
 def run_command(sql, params=None):
-    """
-    For non-returning commands like UPDATE/DELETE, or
-    INSERT without needing returned rows.
-    Commits changes automatically.
-    """
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(sql, params or ())
-    conn.commit()
-    cur.close()
-    conn.close()
+    """Run INSERT/UPDATE/DELETE commands (no return)."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, params or ())
+            conn.commit()
 
 def run_command_returning(sql, params=None):
-    """
-    For INSERT ... RETURNING or similar statements that both write data
-    and return newly generated rows. We do a commit to ensure the data is
-    fully written for subsequent queries.
-    """
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(sql, params or ())
-    rows = cur.fetchall()  # get the RETURNING rows
-    conn.commit()
-    cur.close()
-    conn.close()
-    return rows
+    """Run INSERT ... RETURNING queries and return rows."""
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(sql, params or ())
+            rows = cur.fetchall()
+            conn.commit()
+            return rows
