@@ -47,7 +47,7 @@ def overview():
     LEFT JOIN receivables r ON r.participant_id = p.participant_id
                              AND r.group_id = p.group_id
                              AND r.round_number = c.round_number
-    WHERE g.group_name = ?;
+    WHERE g.group_name = %s;
     """
     rows = run_query(sql, (selected_group,))
 
