@@ -1,3 +1,5 @@
+# db_handler.py
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import streamlit as st
@@ -7,8 +9,11 @@ def get_connection():
     return conn
 
 def run_query(sql, params=None):
+    """
+    For SELECT statements (returns rows as dictionaries).
+    """
     conn = get_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)  # ✅ USE RealDictCursor
+    cur = conn.cursor(cursor_factory=RealDictCursor)  # Use dictionary cursor
     cur.execute(sql, params or ())
     rows = cur.fetchall()
     cur.close()
@@ -16,6 +21,9 @@ def run_query(sql, params=None):
     return rows
 
 def run_command(sql, params=None):
+    """
+    For non-returning commands like UPDATE/DELETE.
+    """
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(sql, params or ())
@@ -24,8 +32,11 @@ def run_command(sql, params=None):
     conn.close()
 
 def run_command_returning(sql, params=None):
+    """
+    For INSERT ... RETURNING.
+    """
     conn = get_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)  # ✅ USE RealDictCursor here too
+    cur = conn.cursor(cursor_factory=RealDictCursor)  # Use dictionary cursor here too
     cur.execute(sql, params or ())
     rows = cur.fetchall()
     conn.commit()
