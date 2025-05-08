@@ -20,7 +20,7 @@ def overview():
         st.warning("No groups found in the database.")
         return
 
-    group_names = [row[0] for row in group_rows]
+    group_names = [row["group_name"] for row in group_rows]
     selected_group = st.selectbox("Select a group to view details", group_names)
 
     if not selected_group:
