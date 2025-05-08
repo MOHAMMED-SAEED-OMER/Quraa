@@ -32,28 +32,27 @@ def overview():
     #    to replicate your merged_data approach.
     #    Adjust table/column names as needed. Example below:
     sql = """
-    SELECT
-        g.group_name,
-        p.participant_name,
-        c.contribution_id,
-        c.round_number,
-        c.paid_yesno AS contribution_paid,
-        c.paid_date,
-        p.contribution,
-        p.share_fraction,
-        r.received_yesno AS receivable_status,
-        r.received_amount,
-        r.received_date
-    FROM participants p
-    JOIN groups g ON p.group_id = g.group_id
-    LEFT JOIN contributions c ON c.participant_id = p.participant_id
-                               AND c.group_id = p.group_id
-    LEFT JOIN receivables r ON r.participant_id = p.participant_id
-                             AND r.group_id = p.group_id
-                             AND r.round_number = c.round_number
-    WHERE g.group_name = %s
-    ORDER BY p.participant_name, c.round_number
-    """
+   SELECT
+    g.group_name,
+    p.participant_name,
+    c.contribution_id,
+    c.round_number,
+    c.paid_yesno AS contribution_paid,
+    c.paid_date,
+    p.contribution,
+    p.share_fraction,
+    r.received_yesno AS receivable_status,
+    r.received_amount,
+    r.received_date
+FROM participants p
+JOIN groups g ON p.group_id = g.group_id
+LEFT JOIN contributions c ON c.participant_id = p.participant_id
+                           AND c.group_id = p.group_id
+LEFT JOIN receivables r ON r.participant_id = p.participant_id
+                         AND r.group_id = p.group_id
+                         AND r.round_number = c.round_number
+WHERE g.group_name = 'Group A';
+
 
     rows = run_query(sql, (selected_group,))
     if not rows:
