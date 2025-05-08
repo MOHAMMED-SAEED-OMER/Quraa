@@ -4,39 +4,39 @@ from psycopg2.extras import RealDictCursor
 import datetime
 
 def google_signin():
-    st.title("Sign In with Google")
-
+    # Auto-trigger Google login
     if not st.experimental_user.is_logged_in:
-        st.write("You are not logged in.")
-        st.button("Log in with Google", on_click=st.login)
+        st.login()  # This immediately opens Google login popup
         st.stop()
 
     user_email = st.experimental_user.email
     user_name = st.experimental_user.name or "Unknown"
-    default_role = "user"
+    default_role = "participant"  # or "user", depending on your model
 
-    # Connect to DB
-    conn = psycopg2.connect(st.secrets["neon"]["dsn"])
-    cur = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        # Connect to DB
+        with psycopg2.connect(st.secrets["neon"]["dsn"]) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Check if user already exists
+                cur.execute("SELECT * FROM users WHERE email = %s", (user_email,))
+                user_record = cur.fetchone()
 
-    # Check if user exists
-    cur.execute("SELECT * FROM users WHERE email = %s", (user_email,))
-    user_record = cur.fetchone()
+                if not user_record:
+                    # Optionally auto-assign 'admin' to specific emails
+                    admin_emails = st.secrets.get("admin_emails", [])
+                    role = "admin" if user_email in admin_emails else default_role
 
-    if not user_record:
-        # Insert user with default role
-        cur.execute("""
-            INSERT INTO users (username, email, role, created_at)
-            VALUES (%s, %s, %s, %s)
-        """, (user_name, user_email, default_role, datetime.datetime.now()))
-        conn.commit()
-        role = default_role
-    else:
-        role = user_record["role"]
+                    # Insert new user
+                    cur.execute("""
+                        INSERT INTO users (username, email, role, created_at)
+                        VALUES (%s, %s, %s, %s)
+                    """, (user_name, user_email, role, datetime.datetime.now()))
+                    conn.commit()
+                else:
+                    role = user_record["role"]
 
-    cur.close()
-    conn.close()
-
-    st.success(f"Logged in as {user_name} ({user_email}) - Role: {role}")
+    except Exception as e:
+        st.error("Error connecting to the database or fetching user info.")
+        st.stop()
 
     return {"name": user_name, "email": user_email, "role": role}
