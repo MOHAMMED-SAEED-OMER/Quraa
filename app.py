@@ -8,11 +8,9 @@ from addgroup import add_group
 from tracking import tracking
 from visualization import visualization
 from settings import settings
-from admin import admin_panel  # NEW
+from admin import admin_panel
 
-# Authentication
-from signin import signin
-from signup import signup
+# Google Sign-In only
 from go_signin import google_signin
 
 st.set_page_config(page_title="Quraa Management System", layout="wide")
@@ -21,23 +19,11 @@ def main():
     configure_theme()
     apply_theme()
 
-    if not st.experimental_user.is_logged_in:
-        _show_auth_interface()
-        return
-
     user_info = google_signin()  # Returns dict with name, email, role
+    if not user_info:
+        st.stop()  # Stop rendering if login failed or user is not authenticated
+
     _show_main_interface(user_info)
-
-def _show_auth_interface():
-    st.title("Quraa - Please Sign In or Sign Up")
-
-    auth_choice = st.radio("Select an action:", ["Sign In (Email)", "Sign Up", "Sign In with Google"])
-    if auth_choice == "Sign In (Email)":
-        signin()
-    elif auth_choice == "Sign Up":
-        signup()
-    else:
-        google_signin()
 
 def _show_main_interface(user_info):
     role = user_info["role"]
@@ -45,7 +31,7 @@ def _show_main_interface(user_info):
     st.sidebar.write(f"**Role:** {role.title()}")
 
     if st.sidebar.button("Logout"):
-        st.logout()
+        st.session_state.clear()  # Clear all session state
         st.success("You have been logged out.")
         st.stop()
 
