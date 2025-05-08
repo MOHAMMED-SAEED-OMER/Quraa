@@ -31,8 +31,8 @@ def overview():
     #    We'll join participants + contributions + (optionally) receivables
     #    to replicate your merged_data approach.
     #    Adjust table/column names as needed. Example below:
-    sql = """
-   SELECT
+   sql = """
+SELECT
     g.group_name,
     p.participant_name,
     c.contribution_id,
@@ -51,7 +51,9 @@ LEFT JOIN contributions c ON c.participant_id = p.participant_id
 LEFT JOIN receivables r ON r.participant_id = p.participant_id
                          AND r.group_id = p.group_id
                          AND r.round_number = c.round_number
-WHERE g.group_name = 'Group A';
+WHERE g.group_name = ?;
+"""  # <--- Use parameter placeholder here
+
 
 
     rows = run_query(sql, (selected_group,))
